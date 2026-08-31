@@ -1,0 +1,14 @@
+# NetBeans generated and user-specific files
+**/build/
+**/dist/
+**/nbproject/private/
+
+# Java build artifacts
+*.class
+*.jar
+
+# IDE and operating-system metadata
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
