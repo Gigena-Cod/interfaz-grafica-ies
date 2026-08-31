@@ -58,6 +58,19 @@ public class RegistroExpress {
             remainder = "undefined";
         }
 
+        keyboard.nextLine();
+
+        String[] interests = new String[3];
+
+        System.out.print("Enter your first interest: ");
+        interests[0] = keyboard.nextLine();
+
+        System.out.print("Enter your second interest: ");
+        interests[1] = keyboard.nextLine();
+
+        System.out.print("Enter your third interest: ");
+        interests[2] = keyboard.nextLine();
+
         System.out.println("Greeting: " + greeting);
         System.out.println("Name: " + fullName);
         System.out.println("Age: " + age);
@@ -74,6 +87,12 @@ public class RegistroExpress {
         System.out.println("a==b=" + aEqualsB);
         System.out.println("a!=b=" + aDifferentFromB);
         System.out.println("bothEven=" + bothEven);
+        System.out.println(
+                "Interests: "
+                + interests[0] + " | "
+                + interests[1] + " | "
+                + interests[2]
+        );
 
         keyboard.close();
     }
