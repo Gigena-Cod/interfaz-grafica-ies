@@ -71,28 +71,39 @@ public class RegistroExpress {
         System.out.print("Enter your third interest: ");
         interests[2] = keyboard.nextLine();
 
+        System.out.println();
+        System.out.println("===== RegistroExpress =====");
         System.out.println("Greeting: " + greeting);
-        System.out.println("Name: " + fullName);
-        System.out.println("Age: " + age);
-        System.out.println("City: " + city);
-        System.out.println("Next year: " + nextYearAge);
-        System.out.println("Adult: " + isAdult);
-        System.out.println("sum=" + sum);
-        System.out.println("subtraction=" + subtraction);
-        System.out.println("product=" + product);
-        System.out.println("quotient=" + quotient);
-        System.out.println("remainder=" + remainder);
-        System.out.println("average=" + average);
-        System.out.println("a>b=" + aGreaterThanB);
-        System.out.println("a==b=" + aEqualsB);
-        System.out.println("a!=b=" + aDifferentFromB);
-        System.out.println("bothEven=" + bothEven);
+        System.out.println(
+                "User: " + fullName
+                + " (" + age
+                + " -> next year: " + nextYearAge
+                + ") - " + city
+        );
+        System.out.println(
+                "Numbers a=" + a
+                + ", b=" + b
+                + " -> sum=" + sum
+                + ", subtraction=" + subtraction
+                + ", product=" + product
+                + ", quotient=" + quotient
+                + ", remainder=" + remainder
+                + ", average=" + average
+        );
+        System.out.println(
+                "Logical -> a>b=" + aGreaterThanB
+                + ", a==b=" + aEqualsB
+                + ", a!=b=" + aDifferentFromB
+                + ", bothEven=" + bothEven
+        );
         System.out.println(
                 "Interests: "
                 + interests[0] + " | "
                 + interests[1] + " | "
                 + interests[2]
         );
+        System.out.println("Adult: " + isAdult);
+        System.out.println("===========================");
 
         keyboard.close();
     }
