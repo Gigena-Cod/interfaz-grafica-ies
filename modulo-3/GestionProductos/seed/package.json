@@ -1,0 +1,12 @@
+{
+  "name": "inventory-manager-seed",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "seed": "node --env-file-if-exists=../.env.local index.mjs",
+    "check": "node --env-file-if-exists=../.env.local index.mjs --check",
+    "configure-java": "node --env-file-if-exists=../.env.local prepare-java.mjs"
+  },
+  "dependencies": { "mongodb": "7.7.0" }
+}

@@ -24,6 +24,9 @@
   <Layout class="org.netbeans.modules.form.compat2.layouts.DesignBorderLayout"/>
   <SubComponents>
     <Component class="com.ies21.gestionproductos.infrastructure.navigation.MainShell" name="mainShell">
+      <AuxValues>
+        <AuxValue name="JavaCodeGenerator_CreateCodeCustom" type="java.lang.String" value="new com.ies21.gestionproductos.infrastructure.navigation.MainShell(service)"/>
+      </AuxValues>
       <Properties>
         <Property name="preferredSize" type="java.awt.Dimension" editor="org.netbeans.beaninfo.editors.DimensionEditor">
           <Dimension value="[1280, 850]"/>

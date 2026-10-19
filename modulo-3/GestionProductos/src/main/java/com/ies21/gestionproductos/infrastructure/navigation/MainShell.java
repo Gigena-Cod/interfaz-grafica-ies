@@ -20,10 +20,25 @@ public class MainShell extends JPanel {
     private final ReportsPanel reports;
 
     /** Constructor usado por NetBeans GUI Builder. */
-    public MainShell() { this(AppConfig.createProductService()); }
+    public MainShell() { this(java.beans.Beans.isDesignTime() ? null : AppConfig.createProductService()); }
 
+    /**
+     * Crea una instancia de cada pantalla con el mismo origen de datos.
+     * En modo diseño muestra un contenedor sin efectuar conexiones a MongoDB.
+     * @param service servicio compartido; puede ser nulo únicamente durante el diseño
+     */
     public MainShell(ProductService service) {
         setLayout(new BorderLayout());
+        if (java.beans.Beans.isDesignTime()) {
+            products = null;
+            detail = null;
+            statistics = null;
+            reports = null;
+            setBackground(Ui.BACKGROUND);
+            add(Ui.label("InventoryManager · Ejecutá el formulario para consultar MongoDB", 18, Ui.INK, true));
+            return;
+        }
+        java.util.Objects.requireNonNull(service);
         JPanel sidebar = new JPanel(new BorderLayout());
         sidebar.setPreferredSize(new Dimension(220, 0));
         sidebar.setBackground(new Color(250, 251, 255));
@@ -70,12 +85,13 @@ public class MainShell extends JPanel {
             select("Reportes");
         }));
         sidebar.add(menu, BorderLayout.NORTH);
-        sidebar.add(Ui.label("●  Sesión local · demo", 12, Ui.GREEN, false), BorderLayout.SOUTH);
+        sidebar.add(Ui.label("●  MongoDB · Inventario", 12, Ui.GREEN, false), BorderLayout.SOUTH);
         add(sidebar, BorderLayout.WEST);
         add(router, BorderLayout.CENTER);
         router.navigate("productos");
         select("Productos");
     }
+    /** Recarga el catálogo existente, conserva sus filtros y activa su opción del menú. */
     private void showProducts() {
         Ui.runSafely(this, () -> {
             products.reloadData();

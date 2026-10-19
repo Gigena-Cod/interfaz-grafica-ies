@@ -59,9 +59,14 @@ public final class ProductDetailPanel extends JPanel {
         top.setOpaque(false);
         top.add(card, BorderLayout.NORTH);
         add(top, BorderLayout.CENTER);
-        add(Ui.label("Datos en memoria · Los cambios se conservan durante esta sesión.", 12, Ui.MUTED, false), BorderLayout.SOUTH);
+        add(Ui.label("MongoDB · Los cambios se guardan en la base de datos.", 12, Ui.MUTED, false), BorderLayout.SOUTH);
     }
 
+    /**
+     * Consulta nuevamente el producto para evitar mostrar una copia desactualizada.
+     * @param id identificador estable seleccionado en el catálogo
+     * @throws IllegalArgumentException si el producto fue eliminado o el ID es inválido
+     */
     public void showProduct(String id) {
         current = service.getProduct(id);
         code.setText("CATÁLOGO  /  " + current.id());

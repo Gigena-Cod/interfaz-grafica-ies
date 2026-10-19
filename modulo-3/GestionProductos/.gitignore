@@ -1,0 +1,4 @@
+.env*
+!.env.example
+seed/node_modules/
+seed/npm-debug.log*

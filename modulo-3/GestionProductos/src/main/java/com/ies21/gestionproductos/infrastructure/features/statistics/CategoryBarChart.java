@@ -16,6 +16,11 @@ public final class CategoryBarChart extends JPanel {
         getAccessibleContext().setAccessibleName("Productos por categoría: " + counts);
         repaint();
     }
+    /**
+     * Dibuja ejes, barras y porcentajes ajustados al tamaño disponible.
+     * Maneja un inventario vacío y libera la copia del contexto gráfico en finally.
+     * @param graphics contexto gráfico proporcionado por Swing
+     */
     @Override protected void paintComponent(Graphics graphics) {
         super.paintComponent(graphics);
         Graphics2D g=(Graphics2D)graphics.create();

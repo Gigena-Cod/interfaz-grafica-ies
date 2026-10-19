@@ -1,18 +1,19 @@
 package com.ies21.gestionproductos.infrastructure.features.statistics;
 
 import com.ies21.gestionproductos.domain.service.ProductService;
+import com.ies21.gestionproductos.domain.service.ProductStatisticsService;
 import com.ies21.gestionproductos.infrastructure.components.*;
 import java.awt.*;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 
 public final class StatisticsPanel extends JPanel {
-    private final ProductService service;
+    private final ProductStatisticsService service;
     private final JPanel stats=new JPanel(new GridLayout(1,3,14,0));
     private final JPanel summary=new JPanel();
     private final CategoryBarChart chart=new CategoryBarChart();
     public StatisticsPanel(ProductService service) {
-        super(new BorderLayout(0,18)); this.service=service;
+        super(new BorderLayout(0,18)); this.service=new ProductStatisticsService(service);
         setBackground(Ui.BACKGROUND); setBorder(new EmptyBorder(22,24,22,24));
         JPanel heading=new JPanel(new BorderLayout(0,18)); heading.setOpaque(false);
         JPanel titles=new JPanel(new GridLayout(2,1,0,5)); titles.setOpaque(false);
@@ -28,10 +29,14 @@ public final class StatisticsPanel extends JPanel {
         content.add(card); summary.setLayout(new BoxLayout(summary,BoxLayout.Y_AXIS)); summary.setOpaque(false); summary.setPreferredSize(new Dimension(290,0));
         JScrollPane scroll=new JScrollPane(summary); scroll.setBorder(null); scroll.setPreferredSize(new Dimension(310,0)); scroll.getViewport().setBackground(Ui.BACKGROUND);
         content.add(scroll,BorderLayout.EAST); add(content);
-        add(Ui.label("Sesión local · Datos actualizados desde el inventario en memoria",12,Ui.MUTED,false),BorderLayout.SOUTH); refreshData();
+        add(Ui.label("MongoDB · Estadísticas calculadas desde los productos guardados",12,Ui.MUTED,false),BorderLayout.SOUTH); refreshData();
     }
     private JPanel card() { JPanel panel=new JPanel(new BorderLayout(0,20)); panel.setBackground(Color.WHITE); panel.setBorder(new EmptyBorder(20,20,20,20)); return panel; }
     private void line(JPanel panel,String text,Color color,boolean bold) { JLabel label=Ui.label(text,12,color,bold); label.setAlignmentX(LEFT_ALIGNMENT); panel.add(label); panel.add(Box.createVerticalStrut(12)); }
+    /**
+     * Consulta un resumen actual y actualiza tarjetas, barras y alertas de reposición.
+     * Las barras cuentan registros de producto, no unidades disponibles en stock.
+     */
     public void refreshData() {
         var data=service.getSummary(); stats.removeAll();
         stats.add(new StatCard("TOTAL DE PRODUCTOS",""+data.total(),"Registros del catálogo",Ui.INK));

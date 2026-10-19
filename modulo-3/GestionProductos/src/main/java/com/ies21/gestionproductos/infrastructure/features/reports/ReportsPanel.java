@@ -36,7 +36,7 @@ public final class ReportsPanel extends JPanel {
         preview.add(Ui.label("Vista previa del documento · Solo lectura",13,Ui.INK,true),BorderLayout.NORTH);
         report.setEditable(false); report.getAccessibleContext().setAccessibleName("Reporte de inventario");
         JScrollPane scroll=new JScrollPane(report); scroll.setBorder(BorderFactory.createLineBorder(new Color(225,232,243))); preview.add(scroll); add(preview);
-        add(Ui.label("Sesión local · Los filtros se aplican al generar el reporte · Valores en ARS",12,Ui.MUTED,false),BorderLayout.SOUTH);
+        add(Ui.label("MongoDB · Los filtros se aplican al generar el reporte · Valores en ARS",12,Ui.MUTED,false),BorderLayout.SOUTH);
         reloadCategories();
     }
     private void reloadCategories() {
@@ -44,6 +44,10 @@ public final class ReportsPanel extends JPanel {
         products.getCategories().forEach(category::addItem);
         for(int i=0;i<category.getItemCount();i++) if(category.getItemAt(i).equals(selected)) category.setSelectedIndex(i);
     }
+    /**
+     * Genera una nueva instantánea con los filtros elegidos y la presenta en modo lectura.
+     * Actualiza los indicadores con esa misma instantánea para que coincidan con el documento.
+     */
     public void refreshReport() {
         reloadCategories();
         var generated=service.generateReport(category.getSelectedIndex()==0?null:(String)category.getSelectedItem(),ProductStatus.values()[status.getSelectedIndex()]);

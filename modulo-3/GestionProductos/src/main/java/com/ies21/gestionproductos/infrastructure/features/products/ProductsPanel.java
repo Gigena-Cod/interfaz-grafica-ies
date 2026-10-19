@@ -4,6 +4,7 @@ import com.ies21.gestionproductos.domain.model.Product;
 import com.ies21.gestionproductos.domain.model.ProductStatus;
 import com.ies21.gestionproductos.infrastructure.features.products.dialogs.*;
 import com.ies21.gestionproductos.domain.service.ProductService;
+import com.ies21.gestionproductos.domain.service.ProductStatisticsService;
 import com.ies21.gestionproductos.infrastructure.components.*;
 import java.awt.*;
 import java.text.NumberFormat;
@@ -16,6 +17,7 @@ import javax.swing.table.*;
 
 public final class ProductsPanel extends JPanel {
     private final ProductService service;
+    private final ProductStatisticsService statisticsService;
     private final JPanel stats = new JPanel(new GridLayout(1, 3, 18, 0));
     private JTable table;
     private boolean reloading;
@@ -31,6 +33,7 @@ public final class ProductsPanel extends JPanel {
 
     public ProductsPanel(ProductService service, java.util.function.Consumer<Product> openDetail, Runnable onChanged) {
         this.service = java.util.Objects.requireNonNull(service);
+        this.statisticsService = new ProductStatisticsService(service);
         java.util.Objects.requireNonNull(openDetail);
         java.util.Objects.requireNonNull(onChanged);
         setLayout(new BorderLayout(0, 24));
@@ -166,7 +169,7 @@ public final class ProductsPanel extends JPanel {
         footer.add(rowActions, BorderLayout.EAST);
         catalog.add(footer, BorderLayout.SOUTH);
         add(catalog, BorderLayout.CENTER);
-        add(Ui.label("MODO DEMOSTRACIÓN  ·  Datos en memoria  ·  MongoDB pendiente de conexión", 12, Ui.MUTED, false), BorderLayout.SOUTH);
+        add(Ui.label("MongoDB · Productos guardados en la base de datos", 12, Ui.MUTED, false), BorderLayout.SOUTH);
 
         search.getDocument().addDocumentListener(new DocumentListener() {
             public void insertUpdate(DocumentEvent e) { refresh(); }
@@ -178,6 +181,11 @@ public final class ProductsPanel extends JPanel {
         reloadData();
     }
 
+    /**
+     * Recarga categorías e indicadores sin reemplazar el panel ni borrar los filtros.
+     * Suspende los eventos del combo durante su reconstrucción para evitar consultas
+     * intermedias; después actualiza la tabla y conserva la selección por ID si sigue visible.
+     */
     public void reloadData() {
         Object selectedCategory = category.getSelectedItem();
         reloading = true;
@@ -187,7 +195,7 @@ public final class ProductsPanel extends JPanel {
             service.getCategories().forEach(category::addItem);
             for (int i = 0; i < category.getItemCount(); i++)
                 if (category.getItemAt(i).equals(selectedCategory)) category.setSelectedIndex(i);
-            var summary = service.getSummary();
+            var summary = statisticsService.getSummary();
             stats.removeAll();
             stats.add(new StatCard("TOTAL DE PRODUCTOS", "" + summary.total(), "Productos registrados en el catálogo", Ui.INK));
             stats.add(new StatCard("DISPONIBLES PARA VENTA", "" + summary.available(), "Con disponibilidad para la venta", Ui.GREEN));
@@ -198,6 +206,11 @@ public final class ProductsPanel extends JPanel {
         repaint();
     }
 
+    /**
+     * Traduce los filtros visibles a criterios del servicio y reconstruye el modelo.
+     * Convierte índices entre vista y modelo para conservar la identidad seleccionada
+     * aunque el usuario haya ordenado la tabla. Presenta los errores mediante Ui.
+     */
     private void refresh() {
         if (reloading) return;
         Ui.runSafely(this, () -> {

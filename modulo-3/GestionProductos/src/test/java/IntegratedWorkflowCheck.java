@@ -57,7 +57,7 @@ public class IntegratedWorkflowCheck {
                     String escaped = new InventoryReportRenderer().renderHtml(new InventoryReportService(isolated, java.time.Clock.systemUTC()).generateReport(null,ProductStatus.ALL));
                     check(escaped.contains("&lt;b&gt; &amp; producto"), "HTML escapado");
 
-                    MainWindow window = new MainWindow();
+                    MainWindow window = new MainWindow(new ProductService(new InMemoryProductRepository()));
                     MainShell shell = ModalSmokeCheck.find(window, MainShell.class).getFirst();
                     ProductsPanel catalog = ModalSmokeCheck.find(shell, ProductsPanel.class).getFirst();
                     JTable table = ModalSmokeCheck.find(catalog, JTable.class).getFirst();

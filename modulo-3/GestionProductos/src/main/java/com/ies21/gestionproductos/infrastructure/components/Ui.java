@@ -14,6 +14,12 @@ public final class Ui {
 
     private Ui() { }
 
+    /**
+     * Ejecuta una acción de interfaz, registra sus errores y muestra un mensaje comprensible.
+     * No crea un hilo de fondo: la acción se ejecuta en el hilo que invoca este método.
+     * @param owner componente propietario del mensaje; puede ser nulo durante el arranque
+     * @param action operación que puede fallar por validación o persistencia
+     */
     public static void runSafely(Component owner, Runnable action) {
         try { action.run(); }
         catch (RuntimeException ex) {

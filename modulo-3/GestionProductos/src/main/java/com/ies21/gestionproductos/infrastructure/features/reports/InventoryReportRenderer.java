@@ -8,6 +8,11 @@ import java.util.Locale;
 
 /** Presentación del reporte: el dominio entrega datos, no HTML ni estilos. */
 public final class InventoryReportRenderer {
+    /**
+     * Evita interpretar nombres y categorías del usuario como etiquetas HTML.
+     * @param value texto que se incluirá en el documento
+     * @return texto con caracteres especiales escapados
+     */
     private static String escape(String value) {
         return value.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;");
     }
@@ -20,6 +25,12 @@ public final class InventoryReportRenderer {
             case OUT_OF_STOCK -> "Agotados";
         };
     }
+    /**
+     * Construye la tabla y el resumen que muestra el JEditorPane de reportes.
+     * No consulta MongoDB: utiliza exclusivamente los datos de la instantánea recibida.
+     * @param data resultados y fecha generados por el servicio
+     * @return documento HTML local con importes en formato argentino
+     */
     public String renderHtml(InventoryReportService.Report data) {
         var snapshot = data.products();
         var category = data.category();
@@ -29,7 +40,7 @@ public final class InventoryReportRenderer {
         String date = data.generatedAt().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss z"));
         StringBuilder html = new StringBuilder("<html><body style='font-family:Segoe UI;color:#141D30;background:white;margin:14px;font-size:11px'>");
         html.append("<h2 style='margin:0'>INVENTORYMANAGER</h2><h3 style='margin:6px 0'>Reporte de catálogo e inventario</h3>");
-        html.append("<p>Fecha de generación: ").append(date).append("<br>Datos de la sesión en memoria<br>");
+        html.append("<p>Fecha de generación: ").append(date).append("<br>Datos del inventario persistido<br>");
         html.append("Categoría: ").append(escape(category == null ? "Todas" : category));
         html.append(" · Estado: ").append(escape(statusLabel(status))).append("</p>");
         html.append("<table width='100%' cellspacing='0' cellpadding='5'>");
@@ -48,12 +59,17 @@ public final class InventoryReportRenderer {
                 .append(currency.format(value)).append(" ARS</b></p><p>Valuación calculada como precio × stock.</p></body></html>");
         return html.toString();
     }
+    /**
+     * Presenta la misma información como texto plano, sin marcas HTML.
+     * @param data instantánea que se desea representar
+     * @return reporte legible con los campos de cada producto
+     */
     public String renderText(InventoryReportService.Report data) {
         var snapshot = data.products();
         var currency = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("es-AR"));
         StringBuilder report = new StringBuilder("INVENTORYMANAGER\nREPORTE DE INVENTARIO\n");
         report.append("Fecha de generación: ").append(data.generatedAt().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss z")));
-        report.append("\nTotal de productos: ").append(snapshot.size()).append("\nDatos de la sesión en memoria\n");
+        report.append("\nTotal de productos: ").append(snapshot.size()).append("\nDatos del inventario persistido\n");
         report.append("─".repeat(64)).append('\n');
         if (snapshot.isEmpty()) report.append("No hay productos registrados.\n");
         for (var product : snapshot) {

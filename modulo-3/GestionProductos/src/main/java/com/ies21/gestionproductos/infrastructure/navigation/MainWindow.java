@@ -9,6 +9,7 @@ package com.ies21.gestionproductos.infrastructure.navigation;
  * @author Nahuel Gigena
  */
 public class MainWindow extends javax.swing.JFrame {
+    private final com.ies21.gestionproductos.domain.service.ProductService service;
 
 
 
@@ -16,6 +17,11 @@ public class MainWindow extends javax.swing.JFrame {
      * Creates new form MainWindow
      */
     public MainWindow() {
+        this(com.ies21.gestionproductos.infrastructure.config.AppConfig.createProductService());
+    }
+
+    public MainWindow(com.ies21.gestionproductos.domain.service.ProductService service) {
+        this.service = java.util.Objects.requireNonNull(service);
         initComponents();
         setMinimumSize(new java.awt.Dimension(1100, 720));
         setLocationRelativeTo(null);
@@ -29,7 +35,7 @@ public class MainWindow extends javax.swing.JFrame {
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
-        mainShell = new com.ies21.gestionproductos.infrastructure.navigation.MainShell();
+        mainShell = new com.ies21.gestionproductos.infrastructure.navigation.MainShell(service);
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("Inventory Management System");
         getContentPane().setLayout(new java.awt.BorderLayout());

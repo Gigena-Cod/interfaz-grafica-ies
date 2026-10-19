@@ -16,6 +16,14 @@ public final class ProductFormDialog extends BaseModal {
     private final JTextField stock = new JTextField("0");
     private final JCheckBox available = new JCheckBox("Disponible para la venta", true);
 
+    /**
+     * Construye el formulario compartido por alta y edición. La vista interpreta los
+     * números ingresados, el servicio valida el negocio y el callback recarga la vista.
+     * @param owner ventana principal sobre la que se centra el modal
+     * @param service servicio compartido de productos
+     * @param product producto a editar, o {@code null} para registrar uno nuevo
+     * @param onSaved acción posterior a una escritura exitosa; no se ejecuta al cancelar
+     */
     public ProductFormDialog(Window owner, ProductService service, Product product, Runnable onSaved) {
         super(owner, product == null ? "Agregar producto" : "Editar producto",
                 product == null ? "Completá los datos básicos del nuevo producto." : "Actualizá los datos del producto. El código se mantiene.",

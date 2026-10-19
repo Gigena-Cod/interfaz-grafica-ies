@@ -7,7 +7,15 @@ import java.awt.*;
 import javax.swing.*;
 import javax.swing.event.*;
 
+/** Confirmación de eliminación que exige escribir exactamente {@code ELIMINAR}. */
 public final class DeleteProductDialog extends BaseModal {
+    /**
+     * Muestra el producto y mantiene deshabilitada la acción hasta recibir confirmación.
+     * @param owner ventana propietaria del modal
+     * @param service servicio encargado de eliminar el registro
+     * @param product producto que se identificará por su ID, nunca por la fila de la tabla
+     * @param onDeleted acción de recarga o navegación posterior a la eliminación exitosa
+     */
     public DeleteProductDialog(Window owner, ProductService service, Product product, Runnable onDeleted) {
         super(owner, "Eliminar producto", "Esta acción no se puede deshacer. Revisá el producto antes de confirmar.", "Eliminar producto", true);
         JPanel content = new JPanel(new BorderLayout(0, 18));

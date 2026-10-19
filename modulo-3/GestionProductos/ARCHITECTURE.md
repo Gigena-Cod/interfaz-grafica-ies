@@ -1,26 +1,29 @@
-# InventoryManager — Arquitectura
+# InventoryManager — Arquitectura y ejecución
 
-Aplicación de escritorio Java Swing / Maven / NetBeans. Se conserva el paquete
-raíz `com.ies21.gestionproductos` y la entrada `GestionProductos`, evitando cambiar
-la identidad del proyecto o reconstruir componentes funcionales.
+Aplicación de escritorio Java Swing / Maven / NetBeans. Paquete raíz:
+`com.ies21.gestionproductos`. La entrada sigue siendo `GestionProductos`.
 
-## Estructura del código activo
+## Organización
 
 ```text
-com.ies21.gestionproductos
-├── GestionProductos.java
+GestionProductos.java
 ├── domain
 │   ├── model
 │   │   ├── Product.java
 │   │   ├── ProductCategories.java
 │   │   ├── ProductStatus.java
 │   │   └── InventorySummary.java
-│   ├── repository/ProductRepository.java
+│   ├── repository
+│   │   ├── ProductRepository.java
+│   │   └── RepositoryException.java
 │   └── service
 │       ├── ProductService.java
+│       ├── ProductStatisticsService.java
 │       └── InventoryReportService.java
 └── infrastructure
-    ├── config/AppConfig.java
+    ├── config
+    │   ├── AppConfig.java
+    │   └── DatabaseConfig.java
     ├── components
     │   ├── Ui.java
     │   ├── FormField.java
@@ -43,109 +46,134 @@ com.ies21.gestionproductos
     │   └── reports
     │       ├── ReportsPanel.java
     │       └── InventoryReportRenderer.java
-    └── persistence/InMemoryProductRepository.java
+    └── persistence
+        └── MongoProductRepository.java
 ```
 
-Pueden permanecer directorios anteriores vacíos; no contienen código ni clases
-compilables. La limpieza Maven elimina las clases antiguas de target antes de
-compilar y empaquetar.
+## Servicios y patrón repositorio
 
-## Responsabilidades y dependencias
+- ProductRepository declara findAll, findById, create, update y delete. El contrato
+  no depende del driver ni de Swing.
+- ProductService centraliza CRUD, validaciones, normalización, búsqueda y filtros.
+- ProductStatisticsService calcula conteos, categorías, disponibles y stock bajo.
+  Obtiene los productos a través de ProductService, sin una lista propia.
+- InventoryReportService genera una instantánea con filtros, fecha y valuación.
+  InventoryReportRenderer presenta sus datos como HTML o texto dentro de Swing.
+- MongoProductRepository implementa el contrato con el driver oficial síncrono.
+  Cada consulta lee MongoDB; no hay almacenamiento ni fallback en memoria en producción.
+- AppConfig comparte el servicio y cliente Mongo durante la ejecución. Cierra el
+  cliente al terminar. La conexión inicial se verifica antes de crear la interfaz.
+- InMemoryProductRepository se movió a src/test/java y se usa solo en verificaciones.
 
-- Product es un record inmutable con BigDecimal. Las modificaciones producen una
-  nueva instancia manteniendo el ID; las listas devueltas no permiten mutación.
-- ProductRepository define consultar todos, consultar por ID, crear, actualizar y
-  eliminar. Solo depende del modelo. El dominio no importa Swing, infraestructura
-  ni bibliotecas de bases de datos.
-- ProductService concentra CRUD, validación, normalización, búsqueda por nombre o
-  ID, categorías, filtros y resumen del inventario. Rechaza nombres/categorías
-  vacíos o nulos, precio nulo o no positivo, stock negativo y productos inexistentes.
-  Stock bajo significa menos de 5 unidades, incluyendo los agotados.
-- ProductCategories define las cuatro categorías estándar una sola vez. También se
-  conservan categorías diferentes preexistentes. ProductStatus representa filtros
-  de negocio sin depender del texto visible de un botón o combo.
-- InventorySummary contiene los conteos y distribuciones inmutables para las vistas.
-- InventoryReportService devuelve una instantánea filtrada, fecha, disponibilidad,
-  stock bajo y valuación (suma de precio × stock). No genera HTML ni estilos.
-- InventoryReportRenderer, dentro de reports, presenta esos datos como HTML o texto.
-  Escapa los valores del usuario antes de incorporarlos al HTML local del JEditorPane.
-- AppConfig selecciona el repositorio en memoria y el reloj de Buenos Aires.
-  Para incorporar otra persistencia, se implementará ProductRepository y se cambiará
-  la selección en AppConfig. No hay drivers, conexiones ni configuración de Mongo/MySQL.
+Product es inmutable y usa BigDecimal. Mongo guarda price como Decimal128 y stock
+como entero. El ID público se almacena como _id de tipo String. Los IDs de nuevas
+altas son UUID y permanecen estables al editar. Las operaciones comprueban el
+resultado: modificar/eliminar un producto inexistente produce un error comprensible.
+Las listas y los resúmenes devueltos son inmutables.
 
-## Navegación y datos compartidos
+Stock bajo significa menos de 5 unidades, incluyendo agotados. La valuación es la
+suma de precio × stock. Disponibilidad es un campo independiente editable.
+No hay una colección de estadísticas: se calculan desde products para reflejar CRUD.
 
-MainWindow es el único JFrame de la aplicación. MainShell recibe un único
-ProductService y lo comparte con todas las vistas y sus diálogos. El constructor
-sin parámetros que necesita NetBeans obtiene ese servicio desde AppConfig.
+## Conexión local
 
-ScreenRouter usa CardLayout. MainShell crea exactamente una instancia de cada
-vista: catálogo, detalle, estadísticas y reportes. Navegar o realizar CRUD recarga
-los datos; no reemplaza el ProductsPanel. El catálogo conserva consulta, filtros,
-orden y selección por ID siempre que el producto siga visible. Si una categoría
-seleccionada deja de existir, se vuelve al filtro de todas las categorías.
+1. Copiar .env.example como .env.local y completar MONGODB_URI.
+2. Usar MONGODB_DATABASE=inventory_manager (o elegir otra base explícitamente).
+3. Autorizar la IP y el usuario de base de datos en MongoDB Atlas.
 
-El detalle consulta el ID actual al entrar y al editar. El catálogo nunca utiliza
-el índice visible de la fila como identidad: convierte la selección al modelo.
-Los resúmenes y reportes se actualizan al entrar a sus vistas o al pulsar actualizar.
+.env.local está excluido de Git; las credenciales no están en las clases ni en el pom.
+El entorno tiene prioridad. DatabaseConfig acepta MONGODB_JAVA_URI como alternativa
+para un JDK que no pueda resolver TXT/SRV. Entre variables de entorno se prioriza
+MONGODB_JAVA_URI y luego MONGODB_URI; después se consultan los valores locales.
+La URI nunca se muestra al imprimir la configuración.
 
-Alta y edición mantienen ProductFormDialog con dos modos. No se duplicó código
-para crear AddProductDialog y EditProductDialog: los tres flujos (alta, edición y
-eliminación) usan dos implementaciones de JDialog a través de BaseModal.
-La eliminación exige ELIMINAR exacto, muestra nombre e ID y no se ejecuta al cancelar.
-El aviso sobre posibles compras es condicional; la aplicación no gestiona compras.
+En este equipo el seed conecta con mongodb+srv, pero el resolver DNS del JDK falló
+al consultar TXT. Se generó localmente una conexión equivalente mongodb:// con TLS:
 
-Cancelar, Escape o cerrar un modal no guarda. Las entradas numéricas se interpretan
-en el formulario; las reglas de negocio se validan en el servicio. Los errores se
-muestran con JOptionPane y se registran, conservando los datos para su corrección.
-Los datos de ejemplo se cargan una sola vez en el repositorio de la sesión.
+```powershell
+npm --prefix seed run configure-java
+```
 
-## NetBeans y ejecución
+El script usa los hosts y opciones publicados por Atlas y escribe únicamente
+MONGODB_JAVA_URI en .env.local. No cambia la configuración de red del equipo.
+Si cambian los hosts del clúster, volver a ejecutarlo.
 
-Abrir el proyecto Maven y ejecutar GestionProductos. MainWindow está ahora en
-`infrastructure/navigation`; el .java y el .form se movieron juntos y la referencia
-a MainShell en el formulario se actualizó. MainWindow.main delega al mismo arranque
-para evitar diferencias al ejecutar el archivo desde NetBeans.
+## Seed JavaScript explícito
 
-El formulario integra MainShell como componente personalizado. Compilar antes de
-abrir Design. Las vistas y modales internos siguen escritos en Source; no se
-agregaron .form individuales ni se verificó la apertura visual del diseñador.
+Consultar seed/README.md. Requiere Node >=22; no forma parte de la aplicación Swing.
 
-## Compilación y verificaciones
+```powershell
+npm --prefix seed ci
+npm --prefix seed run check
+npm --prefix seed run seed
+```
 
-Requiere JDK 26, según la configuración existente del proyecto. Maven de NetBeans
-está disponible en `C:/Program Files/Apache NetBeans/java/maven/bin/mvn.cmd`.
+seed/products.json contiene 24 productos en cuatro categorías. index.mjs valida los
+datos y utiliza upsert con $setOnInsert por _id. Repetirlo no duplica ni sobrescribe
+productos existentes. Si falta un producto inicial, se vuelve a insertar. No elimina
+colecciones ni registros ajenos. Muestra el resumen real consultado en MongoDB.
+La aplicación nunca ejecuta el seed automáticamente.
+
+## Ejecución Java / NetBeans
+
+Requiere JDK 26 (configuración existente). Desde GestionProductos:
 
 ```powershell
 $env:JAVA_HOME = 'C:/Program Files/Java/jdk-26.0.2.1'
-& 'C:/Program Files/Apache NetBeans/java/maven/bin/mvn.cmd' -B -ntp clean -Pverification verify
+& 'C:/Program Files/Apache NetBeans/java/maven/bin/mvn.cmd' compile exec:java
 ```
 
-Con Maven configurado en PATH: `mvn clean -Pverification verify`.
-Las verificaciones están en src/test/java. Son programas Java sin dependencias
-externas de pruebas y el perfil verification los ejecuta en procesos separados.
-Un `mvn test` común los compila; para ejecutarlos debe activarse dicho perfil.
-La prueba de modales y el flujo integrado requieren un escritorio disponible.
+Con Maven en PATH: `mvn compile exec:java`. En NetBeans, ejecutar GestionProductos
+con la raíz del proyecto como directorio de trabajo para leer .env.local.
 
-- StatisticsReportsCheck: búsqueda, limpieza, navegación, límites de stock, conteos,
-  recarga tras CRUD, filtros, valuación, fecha local, reportes y estados vacíos.
-- ModalSmokeCheck: alta, números inválidos, coma decimal, edición con ID estable,
-  cancelación, confirmación exacta y eliminación, selección de una tabla ordenada.
-- IntegratedWorkflowCheck: ejecuta los botones reales de MainWindow en la secuencia
-  alta → búsqueda → detalle → edición → estadísticas → reporte → eliminación.
-  Comprueba una instancia de cada panel, un único JFrame, filtros y selección
-  conservados, validaciones nulas/productos inexistentes y escape del HTML.
+MainWindow es el único JFrame principal. CardLayout mantiene una instancia de
+catálogo, detalle, estadísticas y reportes. Todos comparten el mismo servicio de
+productos; los modales son JDialog. El catálogo conserva filtros y selección por ID.
+Las vistas consultan datos al entrar/actualizar. Alta/edición reutilizan el mismo
+formulario; eliminar exige ELIMINAR exacto. Cancelar no guarda cambios.
+Los errores de configuración, red o persistencia se muestran mediante JOptionPane.
+El driver síncrono usa tiempos máximos de conexión/selección de servidor/lectura.
+La conexión inicial ocurre fuera del hilo de eventos; las consultas de las vistas
+siguen siendo síncronas, por lo que una red lenta puede demorar una acción.
 
-El pom solo agrega un perfil con exec-maven-plugin para ejecutar estas verificaciones.
-No incorpora frameworks ni dependencias de base de datos. Se conservan las vistas,
-colores y comportamientos funcionales existentes.
+MainWindow.java y .form permanecen juntos en infrastructure/navigation. El formulario
+integra MainShell como componente personalizado y conserva la creación con el servicio
+inyectado. En Beans.isDesignTime, MainShell muestra un contenedor de diseño sin
+conectarse a MongoDB. Las pantallas y modales internos siguen editándose en Source.
+No se verificó la pestaña Design dentro del IDE.
 
-## Resumen de la refactorización
+## Verificaciones
 
-Se movió dominio a domain y la interfaz a infrastructure/features. El contrato de
-persistencia quedó en dominio y su implementación en infrastructure/persistence.
-MainWindow, MainShell y ScreenRouter pasaron a navigation. Se agregó AppConfig,
-InventorySummary, ProductCategories, ProductStatus e InventoryReportRenderer.
-Se removieron DatabaseConfig y el paquete marcador de Mongo, ambos sin uso.
-Se actualizaron imports, formulario de NetBeans y verificaciones. Se eliminaron
-constructores de catálogo con callbacks vacíos y callbacks circulares con arrays.
+Pruebas de interfaz y negocio, sin Atlas:
+
+```powershell
+mvn -Pverification verify
+```
+
+Prueba de persistencia real, requiere configuración de Atlas:
+
+```powershell
+mvn -Pmongo-verification verify
+```
+
+Todo, incluyendo limpieza previa:
+
+```powershell
+mvn clean -Pverification,mongo-verification verify
+```
+
+Las clases de src/test/java se ejecutan mediante perfiles de exec-maven-plugin,
+sin frameworks adicionales de pruebas. Un mvn test común solo las compila.
+Los perfiles que comprueban ventanas y modales requieren un escritorio disponible.
+
+- StatisticsReportsCheck: búsqueda, filtros, navegación, estadísticas, reportes y vacíos.
+- ModalSmokeCheck: validaciones, coma decimal, edición, ID estable, cancelación y eliminación.
+- IntegratedWorkflowCheck: flujo completo sobre MainWindow con repositorio aislado de prueba.
+- MongoRepositoryCheck: ping real, alta temporal, Decimal128, búsqueda, lectura desde
+  otro cliente, edición, estadísticas, reporte y eliminación. Finalmente limpia solo
+  su propio producto; no borra el seed. También verifica las vistas contra Atlas y
+  genera target/statistics-mongo-preview.png y target/reports-mongo-preview.png.
+
+Se comprobó el seed dos veces: 24 insertados la primera vez y cero nuevos la segunda.
+Se verificaron operaciones reales desde Java y persistencia entre conexiones.
+No se agregaron compras, autenticación, exportaciones ni impresión.
